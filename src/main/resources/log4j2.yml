@@ -1,0 +1,49 @@
+Configuration:
+  status: warn
+  name: PlayersApplicationLog
+  properties:
+    property:
+      name: filename
+      value: players.log
+  thresholdFilter:
+    level: debug
+
+  appenders:
+    Console:
+      name: Console
+      target: SYSTEM_OUT
+      PatternLayout:
+        Pattern: "%m%n"
+      Filters:
+        ThresholdFilter:
+          level: info
+
+    RollingFile:
+      name: RollingFile
+      fileName: ${filename}
+      filePattern: ${date:yyyy-MM}/${filename}-%d{MM-dd-yyyy}-%i.log.gz"
+      PatternLayout:
+        Pattern: "%d %p %C{1.} [%t] %m%n"
+      Policies:
+        SizeBasedTriggeringPolicy:
+          size: 10MB
+      DefaultRollOverStrategy:
+        max: 10
+      Filters:
+        ThresholdFilter:
+          level: info
+
+  Loggers:
+    logger:
+      -
+        name: org.vlebedzeu.players
+        level: debug
+        additivity: false
+        AppenderRef:
+          - ref: Console
+          - ref: RollingFile
+
+    Root:
+      level: info
+      AppenderRef:
+        ref: Console
