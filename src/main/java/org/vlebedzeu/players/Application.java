@@ -10,23 +10,23 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vlebedzeu.players.api.ConfigConstants;
 import org.vlebedzeu.players.api.InitializationException;
 import org.vlebedzeu.players.api.builders.ApplicationBuilder;
 
 import static org.vlebedzeu.players.api.ConfigConstants.*;
 
 /**
- *
+ * Main application class
  */
 public class Application  {
-
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     /** CLI options */
     private static final Options options = new Options();
 
     static {
+        // Initializing expected CLI options
         options.addOption(
                 Option.builder(OPT_CHANNEL)
                         .longOpt(OPT_CHANNEL_LONG)
@@ -81,6 +81,10 @@ public class Application  {
         );
     }
 
+    /**
+     * Main application method
+     * @param args Application arguments
+     */
     public static void main(String... args) {
         logger.info("Running Players application...");
         if (parseParameters(args)) {
@@ -88,6 +92,11 @@ public class Application  {
         }
     }
 
+    /**
+     * Parces application parameters and starts the application
+     * @param args Application argumants
+     * @return True if application is run successfully
+     */
     private static boolean parseParameters(String... args) {
         CommandLineParser parser = new DefaultParser();
         try {

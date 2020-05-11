@@ -13,26 +13,28 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
- *
+ * Socket holder that helps to handle all socket events
  */
 public class SocketHolder implements Runnable {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(SocketHolder.class);
 
-    // private final Socket socket;
+    /** Socket channel handler */
     private final SocketChannelHandler handler;
 
+    /** Async socket channel */
     @Getter
     private final AsynchronousSocketChannel clientChannel;
 
+    /** Holder Id */
     @Getter
     private final String id;
 
-/*
-    public ServerSocketHolder(Socket socket) {
-        this.socket = socket;
-    }
-*/
-
+    /**
+     * Parametrized constructor
+     * @param handler Socket channel handler
+     * @param clientChannel Socket channel
+     */
     public SocketHolder(SocketChannelHandler handler, AsynchronousSocketChannel clientChannel) {
         this.handler = handler;
         this.clientChannel = clientChannel;
@@ -44,6 +46,9 @@ public class SocketHolder implements Runnable {
         readMessages();
     }
 
+    /**
+     * Closes related socket channel
+     */
     public void close() {
         // Closes connection
         if (clientChannel != null && clientChannel.isOpen()) {
@@ -56,6 +61,10 @@ public class SocketHolder implements Runnable {
         }
     }
 
+    /**
+     * Sends string message into socket channel
+     * @param message String message
+     */
     public void sendMessage(String message) {
         try {
             // Writing size of message
@@ -65,6 +74,7 @@ public class SocketHolder implements Runnable {
             szBuffer.flip();
             Integer wrote = writeSzResult.get();
 
+            // Writing message body
             byte[] byteMsg = message.getBytes();
             ByteBuffer buffer = ByteBuffer.wrap(byteMsg);
             Future<Integer> writeResult = clientChannel.write(buffer);
@@ -77,6 +87,9 @@ public class SocketHolder implements Runnable {
         }
     }
 
+    /**
+     * Reads messages in the loop
+     */
     private void readMessages() {
         if ((clientChannel != null) && (clientChannel.isOpen())) {
             ByteBuffer szBuffer = ByteBuffer.allocate(8);

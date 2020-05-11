@@ -20,54 +20,76 @@ import java.util.concurrent.Executors;
 import static org.vlebedzeu.players.api.events.InOutEvent.InOutType.IN;
 
 /**
- *
+ * Implementation of server socket connection
  */
 public class ServerSocketConnection implements SocketConnection, SocketChannelHandler {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(ServerSocketConnection.class);
 
+    /** Connection port */
     private final int port;
+    /** Socket event queue interface */
     private final SocketEventQueueAware queueAware;
 
+    /** Async server socket channel */
     private AsynchronousServerSocketChannel serverChannel;
+    /** Server connection task */
+    private ServerConnectionTask serverConnectionTask;
 
-    // private ServerSocket serverSocket;
-
+    /** Executor for server connection task */
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** Executor for newly added client socket connections */
     private final ExecutorService clientExecutor = Executors.newCachedThreadPool();
 
+    /** Map of socket holder Id and its object */
     private final Map<String, SocketHolder> socketHolderMap = Collections.synchronizedMap(new HashMap<>());
+    /** Map of subscribed player Id and socket holder object */
     private final Map<String, SocketHolder> playerSocketHolderMap = Collections.synchronizedMap(new HashMap<>());
+    /** Map of socket holder Id and player Id */
     private final Map<String, String> socketHolderPlayerMap = Collections.synchronizedMap(new HashMap<>());
 
+    /** Event message mapper */
     private final EventMessageMapper mapper = new EventMessageMapper();
 
+    /**
+     * Parametrized constructor
+     * @param port Port
+     * @param queueAware Socket event queue interface
+     */
     public ServerSocketConnection(int port, SocketEventQueueAware queueAware) {
         this.port = port;
         this.queueAware = queueAware;
     }
 
+    /**
+     * Starts server socket connection
+     * @return Reference to started connection
+     * @throws IOException In case of any IO error
+     */
     public SocketConnection start() throws IOException {
-//        serverSocket = new ServerSocket(port);
         serverChannel = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(port));
         logger.info("Run application connection in server mode. Bind to port {}", port);
 
-        executor.submit(new ServerConnectionTask(serverChannel, this));
+        serverConnectionTask = new ServerConnectionTask(serverChannel, this);
+        executor.submit(serverConnectionTask);
 
         return this;
     }
 
     @Override
     public void stop() {
-        executor.shutdownNow();
-        clientExecutor.shutdownNow();
         if (serverChannel != null && serverChannel.isOpen()) {
             try {
                 serverChannel.close();
             }
             catch(IOException e) {
-                //
+                // Skipping this exception
             }
         }
+
+        serverConnectionTask.stop();
+        executor.shutdown();
+        clientExecutor.shutdown();
         socketHolderMap.values()
                 .parallelStream()
                 .forEach(SocketHolder::close);
@@ -161,6 +183,11 @@ public class ServerSocketConnection implements SocketConnection, SocketChannelHa
         return true;
     }
 
+    /**
+     * Send event to specified player
+     * @param playerId Player Id
+     * @param event Event to send
+     */
     private void sendEvent(final String playerId, Event event) {
         if (playerSocketHolderMap.containsKey(playerId)) {
             playerSocketHolderMap.get(playerId).sendMessage(mapper.eventToString(event));

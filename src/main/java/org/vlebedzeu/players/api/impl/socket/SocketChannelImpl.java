@@ -10,7 +10,6 @@ import org.vlebedzeu.players.api.events.DirectMessageEvent;
 import org.vlebedzeu.players.api.events.InOutEvent;
 import org.vlebedzeu.players.api.events.MessageEvent;
 import org.vlebedzeu.players.api.events.ReadyEvent;
-import org.vlebedzeu.players.api.events.ShootDownEvent;
 import org.vlebedzeu.players.api.events.SubscribeEvent;
 import org.vlebedzeu.players.api.events.UnsubscribeEvent;
 import org.vlebedzeu.players.api.players.Player;
@@ -30,37 +29,60 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import static org.vlebedzeu.players.api.events.InOutEvent.InOutType.*;
+import static org.vlebedzeu.players.api.events.InOutEvent.InOutType.IN;
+import static org.vlebedzeu.players.api.events.InOutEvent.InOutType.OUT;
 
 /**
  * Channel that implements socket connections
  */
 public class SocketChannelImpl implements Channel, SocketEventQueueAware, InitTimeoutTrigger {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(SocketChannelImpl.class);
 
+    /** Connection host */
     private final String host;
+    /** Connection port */
     private final int port;
+    /** Socket connection instance (server or client) */
     private SocketConnection conn;
+    /** Player attached to channel */
     private Player player;
 
+    /** Player id */
     private String playerId;
+    /** Message source */
     private MessageSource messageSource;
+    /** Limit of sending messages */
     private int limit;
 
+    /** Events queue */
     private final ConcurrentLinkedQueue<InOutEvent> events = new ConcurrentLinkedQueue<>();
+    /** Channel bus task executor */
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** Timeout task executor */
     private final ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(1);
+    /** Events queue semaphore */
     private final Semaphore semaphore = new Semaphore(1);
+    /** Events queue task instance */
     private SocketChannelBusTask queueTask;
 
+    /** Server mode flag */
     @Getter
     private boolean serverMode = false;
 
+    /** Number of subscribers to start conversation */
     private int triggerSubscribers = Integer.MAX_VALUE;
+    /** Init timeout. Starts conversation when triggered if channel has some subscribers. */
     private long startTimeoutSecs = 180L;
 
+    /** Flags if conversation had already triggered */
     private boolean isTriggered = false;
 
+    /**
+     * Parametrized constructor
+     * @param host Host
+     * @param port Port
+     */
     public SocketChannelImpl(String host, int port) {
         this.host = host;
         this.port = port;
@@ -73,19 +95,18 @@ public class SocketChannelImpl implements Channel, SocketEventQueueAware, InitTi
             conn = new ServerSocketConnection(port, this).start();
             serverMode = true;
         } catch (IOException e) {
-            // Just logging this exception and trying to run client connection
-            // logger.error("Caught IOException", e);
-            logger.warn("Can not run in server mode. Port {} already in use.", port);
+            logger.info("Can not run in server mode. Port {} already in use.", port);
         }
         if (conn == null) {
             try {
                 conn = new ClientSocketConnection(host, port, this).start();
             } catch (IOException e) {
-                // Just logging this exception and trying to run client connection
-                logger.error("Caught IOException", e);
+                // Skipping this exception
             }
         }
+
         if (conn == null) {
+            // connection isn't established, throwing initialization exception
             throw new InitializationException("Can not start application neither in server or client mode.");
         }
 
@@ -102,9 +123,6 @@ public class SocketChannelImpl implements Channel, SocketEventQueueAware, InitTi
 
     @Override
     public void stop() {
-//        if (serverMode) {
-//            addEventAndUnlock(new InOutEvent(OUT, new ShootDownEvent(null)));
-//        }
         queueTask.stop();
         executor.shutdown();
         if (!timeoutExecutor.isShutdown()) {
@@ -140,11 +158,6 @@ public class SocketChannelImpl implements Channel, SocketEventQueueAware, InitTi
         addEventAndUnlock(new InOutEvent(OUT, event));
     }
 
-    public void initStarter(long startTimeoutSecs, int triggerSubscribers) {
-        this.startTimeoutSecs = startTimeoutSecs;
-        this.triggerSubscribers = triggerSubscribers;
-    }
-
     @Override
     public void onInitTimeout() {
         if (serverMode) {
@@ -159,23 +172,6 @@ public class SocketChannelImpl implements Channel, SocketEventQueueAware, InitTi
                 stop();
             }
         }
-    }
-
-    public void initPlayer(String playerId, MessageSource messageSource, int limit) {
-        this.playerId = playerId;
-        this.messageSource = messageSource;
-        this.limit = limit;
-    }
-
-    private void initPrimaryPlayer() {
-        player = new PrimaryPlayer(playerId, this, messageSource, limit);
-        subscribePlayer(player);
-    }
-
-    private void initSecondaryPlayer() {
-        player = new SecondaryPlayer(playerId, this);
-        subscribePlayer(player);
-        addEventAndUnlock(new InOutEvent(IN, new ReadyEvent(null)));
     }
 
     @Override
@@ -209,5 +205,38 @@ public class SocketChannelImpl implements Channel, SocketEventQueueAware, InitTi
             PrimaryPlayer primaryPlayer = (PrimaryPlayer) player;
             primaryPlayer.handleUnsubscribeEvent(event);
         }
+    }
+
+    /**
+     * Inits timeout and subscribers count for triggering
+     * @param startTimeoutSecs Start timeout in seconds
+     * @param triggerSubscribers Expected count of subscribers to start conversation
+     */
+    public void initStarter(long startTimeoutSecs, int triggerSubscribers) {
+        this.startTimeoutSecs = startTimeoutSecs;
+        this.triggerSubscribers = triggerSubscribers;
+    }
+
+    /**
+     * Inits player initial information
+     * @param playerId Player Id
+     * @param messageSource Message sopurce
+     * @param limit Limit of sending messages
+     */
+    public void initPlayer(String playerId, MessageSource messageSource, int limit) {
+        this.playerId = playerId;
+        this.messageSource = messageSource;
+        this.limit = limit;
+    }
+
+    private void initPrimaryPlayer() {
+        player = new PrimaryPlayer(playerId, this, messageSource, limit);
+        subscribePlayer(player);
+    }
+
+    private void initSecondaryPlayer() {
+        player = new SecondaryPlayer(playerId, this);
+        subscribePlayer(player);
+        addEventAndUnlock(new InOutEvent(IN, new ReadyEvent(null)));
     }
 }

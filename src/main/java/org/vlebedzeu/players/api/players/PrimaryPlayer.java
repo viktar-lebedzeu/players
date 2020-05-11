@@ -20,36 +20,44 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- *
+ * Primary player instance, aka "initiator"
  */
 public class PrimaryPlayer extends Player implements SubscriptionAware {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(PrimaryPlayer.class);
 
+    /** Communication channel */
     private final Channel channel;
 
+    /** Message source */
     private final MessageSource messageSource;
 
+    /** Set of other players Ids */
     @Getter
     private final Set<String> playerIds = Collections.synchronizedSet(new HashSet<>());
 
-    // Message Id, responses we waiting for
+    /** Message Id, responses we waiting for */
     private final AtomicReference<String> awaitingMessageId = new AtomicReference<>();
-    // Set of player Ids that should response
+    /** Set of player Ids that should response */
     private final Set<String> awaitingResponders = Collections.synchronizedSet(new HashSet<>());
 
+    /** Currect message count */
     private final AtomicInteger count = new AtomicInteger(0);
+    /** Limit of sent text messages */
     private final int limit;
 
+    /**
+     * Parametrized constructor
+     * @param id Player Id
+     * @param channel Communication channel
+     * @param messageSource Message source
+     * @param limit Limit of messages
+     */
     public PrimaryPlayer(String id, Channel channel, MessageSource messageSource, int limit) {
         super(id);
         this.channel = channel;
         this.messageSource = messageSource;
         this.limit = limit;
-    }
-
-    @Override
-    public boolean isPrimary() {
-        return true;
     }
 
     @Override
@@ -101,11 +109,17 @@ public class PrimaryPlayer extends Player implements SubscriptionAware {
         }
     }
 
+    /**
+     * Shoots down communication channel
+     */
     private void shootDownChannel() {
         logger.info("Started shooting down the channel");
         channel.stop();
     }
 
+    /**
+     * Sends the next text message
+     */
     private void sendNextMessage() {
         String msgId = awaitingMessageId.get();
         if (StringUtils.isBlank(msgId)) {

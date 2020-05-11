@@ -19,19 +19,34 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- *
+ * Message bus task for default channel implementation. Allows to receive and send events using queue.
  */
 public class ChannelBusTask implements Runnable {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(ChannelBusTask.class);
 
+    /** Events queue */
     private final Queue<Event> eventQueue;
+    /** Semaphore for triggering event processing */
     private final Semaphore semaphore;
+    /** Set of registered players */
     private final Set<Player> players;
+    /** Map of player Id and player object */
     private final Map<String, Player> playersMap;
+    /** Set of subscribers */
     private final Set<SubscriptionAware> subscribers;
 
-    private AtomicBoolean isRunning = new AtomicBoolean(true);
+    /** Running flag */
+    private final AtomicBoolean isRunning = new AtomicBoolean(true);
 
+    /**
+     * Parametrized constructor
+     * @param eventQueue Events queue
+     * @param semaphore Instance of semaphore
+     * @param players Set of Players
+     * @param playersMap Map of player Id and player object
+     * @param subscribers Set of subscribers
+     */
     public ChannelBusTask(Queue<Event> eventQueue, Semaphore semaphore,
                           Set<Player> players, Map<String, Player> playersMap,
                           Set<SubscriptionAware> subscribers) {
@@ -42,6 +57,9 @@ public class ChannelBusTask implements Runnable {
         this.subscribers = subscribers;
     }
 
+    /**
+     * Stops task execution
+     */
     public void stop() {
         isRunning.set(false);
         if (semaphore.hasQueuedThreads()) {
@@ -49,6 +67,9 @@ public class ChannelBusTask implements Runnable {
         }
     }
 
+    /**
+     * Runs task execution
+     */
     @Override
     public void run() {
         while(isRunning.get()) {
@@ -64,6 +85,10 @@ public class ChannelBusTask implements Runnable {
         logger.info("Channel bus task completed.");
     }
 
+    /**
+     * Processes event
+     * @param event Event for processing
+     */
     private void processEvent(Event event) {
         if (event == null) {
             return;
