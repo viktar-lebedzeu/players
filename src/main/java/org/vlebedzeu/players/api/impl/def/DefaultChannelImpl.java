@@ -29,17 +29,25 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 /**
- *
+ * Default implementation of channel interface
  */
 public class DefaultChannelImpl implements Channel {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(DefaultChannelImpl.class);
 
+    /** Set of players */
     private final Set<Player> players = Collections.synchronizedSet(new HashSet<>());
+    /** Map of player Id and player object */
     private final Map<String, Player> playersMap = Collections.synchronizedMap(new HashMap<>());
+    /** Set of subscribers */
     private final Set<SubscriptionAware> subscribers = Collections.synchronizedSet(new HashSet<>());
+    /** Events queue */
     private final ConcurrentLinkedQueue<Event> events = new ConcurrentLinkedQueue<>();
+    /** Channel bus executor */
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** Events queue semaphore */
     private final Semaphore semaphore = new Semaphore(1);
+    /** Channel bus task */
     private ChannelBusTask queueTask;
 
     @Override
@@ -88,11 +96,21 @@ public class DefaultChannelImpl implements Channel {
         addEventAndUnlock(event);
     }
 
+    /**
+     * Initialize primary player
+     * @param playerId Player Id
+     * @param messageSource Message source
+     * @param limit Limit of sending messages
+     */
     public void initPrimaryPlayer(String playerId, MessageSource messageSource, int limit) {
         PrimaryPlayer player = new PrimaryPlayer(playerId, this, messageSource, limit);
         subscribePlayer(player);
     }
 
+    /**
+     * Initializes secondary players
+     * @param playerIds Players Ids
+     */
     public void initSecondaryPlayers(List<String> playerIds) {
         playerIds.forEach(id -> {
                 SecondaryPlayer player = new SecondaryPlayer(id, this);
@@ -100,6 +118,10 @@ public class DefaultChannelImpl implements Channel {
         });
     }
 
+    /**
+     * Adds event into the queue and unlock processing
+     * @param event Event to add
+     */
     private void addEventAndUnlock(Event event) {
         events.add(event);
         if (semaphore.hasQueuedThreads()) {

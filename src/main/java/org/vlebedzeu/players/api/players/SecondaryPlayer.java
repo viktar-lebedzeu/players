@@ -14,20 +14,23 @@ import java.util.concurrent.atomic.AtomicLong;
  * Implementation of behaviour of secondary player. Sends concatenated received text message with current counter value.
  */
 public class SecondaryPlayer extends Player {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(SecondaryPlayer.class);
 
+    /** Message sender */
     private final MessageSender messageSender;
 
+    /** Current message counter */
     private final AtomicLong counter = new AtomicLong(0L);
 
+    /**
+     * Parametrized constructor
+     * @param id Player Id
+     * @param messageSender Message sender
+     */
     public SecondaryPlayer(String id, MessageSender messageSender) {
         super(id);
         this.messageSender = messageSender;
-    }
-
-    @Override
-    public boolean isPrimary() {
-        return false;
     }
 
     @Override

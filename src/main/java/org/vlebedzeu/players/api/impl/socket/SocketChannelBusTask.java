@@ -12,7 +12,6 @@ import org.vlebedzeu.players.api.events.SubscribeEvent;
 import org.vlebedzeu.players.api.events.SubscriptionAware;
 import org.vlebedzeu.players.api.events.UnsubscribeEvent;
 import org.vlebedzeu.players.api.players.Player;
-import org.vlebedzeu.players.api.players.SecondaryPlayer;
 import org.vlebedzeu.players.api.socket.SocketConnection;
 
 import java.util.Queue;
@@ -20,18 +19,31 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- *
+ * Channel event queue task for socket implementation
  */
 public class SocketChannelBusTask implements Runnable {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(SocketChannelBusTask.class);
 
+    /** Event queue */
     private final Queue<InOutEvent> eventQueue;
+    /** Event queue semaphore */
     private final Semaphore semaphore;
+    /** Socket connection (server or client) */
     private final SocketConnection conn;
+    /** Player attached to current channel */
     private final Player player;
 
-    private AtomicBoolean isRunning = new AtomicBoolean(true);
+    /** Running flag */
+    private final AtomicBoolean isRunning = new AtomicBoolean(true);
 
+    /**
+     * Parametrized constructor
+     * @param eventQueue Events queue
+     * @param semaphore Events queue semaphore
+     * @param conn Socket connection instance
+     * @param player Attached player
+     */
     public SocketChannelBusTask(Queue<InOutEvent> eventQueue, Semaphore semaphore,
                                 SocketConnection conn, Player player) {
         this.eventQueue = eventQueue;
@@ -40,6 +52,9 @@ public class SocketChannelBusTask implements Runnable {
         this.player = player;
     }
 
+    /**
+     * Starts event bus
+     */
     @Override
     public void run() {
         while (isRunning.get()) {
@@ -55,6 +70,9 @@ public class SocketChannelBusTask implements Runnable {
         logger.info("Socket channel bus task completed.");
     }
 
+    /**
+     * Stops event bus
+     */
     public void stop() {
         isRunning.set(false);
         if (semaphore.hasQueuedThreads()) {
@@ -62,6 +80,10 @@ public class SocketChannelBusTask implements Runnable {
         }
     }
 
+    /**
+     * Processes event
+     * @param inOutEvent Event to process
+     */
     private void processEvent(InOutEvent inOutEvent) {
         if (inOutEvent == null) {
             return;
@@ -78,6 +100,10 @@ public class SocketChannelBusTask implements Runnable {
         }
     }
 
+    /**
+     * Processes incoming event
+     * @param event Incoming event
+     */
     private void processInEvent(Event event) {
         switch (event.getType()) {
             case READY:
@@ -113,6 +139,10 @@ public class SocketChannelBusTask implements Runnable {
         }
     }
 
+    /**
+     * Processes outgoing event
+     * @param event Outgoing event
+     */
     private void processOutEvent(Event event) {
         conn.sendEvent(event);
     }

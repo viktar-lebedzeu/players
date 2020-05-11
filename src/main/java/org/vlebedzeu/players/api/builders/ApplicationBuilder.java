@@ -16,23 +16,45 @@ import java.util.stream.Collectors;
 import static org.vlebedzeu.players.api.ConfigConstants.*;
 
 /**
- *
+ * Application builder class that helps to create and run application using command line options
  */
 public class ApplicationBuilder {
     private static final String CHANNEL_TYPE_SOCKET = "socket";
     private final CommandLine cmdLine;
     private Channel channel;
 
+    /**
+     * Parametrized constructor
+     * @param cmdLine Command line options
+     */
     public ApplicationBuilder(CommandLine cmdLine) {
         this.cmdLine = cmdLine;
     }
 
+    /**
+     * Builds application instance
+     * @return Reference to current instance to be able to build chain of method calls
+     * @throws InitializationException In case of any initialization error
+     */
     public ApplicationBuilder build() throws InitializationException {
         // Check for different types of channels
         channel = createChannel();
         return this;
     }
 
+    /**
+     * Starts application
+     * @throws InitializationException In case of any initialization error
+     */
+    public void start() throws InitializationException {
+        channel.start();
+    }
+
+    /**
+     * Creates communication channel using command line options
+     * @return Instance of communication channel
+     * @throws InitializationException In case of any initialization error
+     */
     private Channel createChannel() throws InitializationException {
         final String channelOpt = cmdLine.getOptionValue(OPT_CHANNEL);
         final String messageOpt = StringUtils.defaultIfBlank(cmdLine.getOptionValue(OPT_MESSAGE), "Default message");
@@ -50,8 +72,13 @@ public class ApplicationBuilder {
         return createDefaultChannel(playerIds, messageSource);
     }
 
+    /**
+     * Creates default channel implementation (in-memory, all players in the same java process)
+     * @param playerIds List of players Ids to build communication environment
+     * @param messageSource Message source that provides messages to send by primary player (aka "initiator")
+     * @return Reference to channel instance
+     */
     private Channel createDefaultChannel(List<String> playerIds, MessageSource messageSource) {
-
         DefaultChannelImpl channelImpl = new DefaultChannelImpl();
 
         String primaryId = playerIds.remove(0);
@@ -60,6 +87,14 @@ public class ApplicationBuilder {
         return channelImpl;
     }
 
+    /**
+     * Creates IPC channel built on sockets
+     * @param channelOpt Channel options string. Must be in "socket:<hostname>:<port>" format
+     * @param playerIds List of players Ids to build communication environment
+     * @param messageSource Message source that provides messages to send by primary player (aka "initiator")
+     * @return Reference to channel instance
+     * @throws InitializationException In case of any initialization error
+     */
     private Channel createSocketChannel(String channelOpt, List<String> playerIds, MessageSource messageSource)
             throws InitializationException {
 
@@ -113,9 +148,5 @@ public class ApplicationBuilder {
         channelImpl.initStarter(timeout, subCount);
 
         return channelImpl;
-    }
-
-    public void start() throws InitializationException {
-        channel.start();
     }
 }

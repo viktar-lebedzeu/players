@@ -3,7 +3,7 @@ package org.vlebedzeu.players.api;
 import org.apache.commons.cli.Option;
 
 /**
- *
+ * Configuration constants
  */
 public class ConfigConstants {
     public static final String OPT_CHANNEL = "ch";
