@@ -1,0 +1,1 @@
+start java -jar target\players-jar-with-dependencies.jar -ch socket:localhost:6000 -p player_1

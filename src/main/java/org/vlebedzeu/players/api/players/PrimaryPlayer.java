@@ -1,5 +1,6 @@
 package org.vlebedzeu.players.api.players;
 
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,7 @@ public class PrimaryPlayer extends Player implements SubscriptionAware {
 
     private final MessageSource messageSource;
 
+    @Getter
     private final Set<String> playerIds = Collections.synchronizedSet(new HashSet<>());
 
     // Message Id, responses we waiting for

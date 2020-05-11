@@ -1,4 +1,4 @@
-package org.vlebedzeu.players.api.impl;
+package org.vlebedzeu.players.api.impl.def;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +12,6 @@ import org.vlebedzeu.players.api.events.SubscriptionAware;
 import org.vlebedzeu.players.api.events.UnsubscribeEvent;
 import org.vlebedzeu.players.api.players.Player;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -47,6 +44,9 @@ public class ChannelBusTask implements Runnable {
 
     public void stop() {
         isRunning.set(false);
+        if (semaphore.hasQueuedThreads()) {
+            semaphore.release();
+        }
     }
 
     @Override
@@ -69,36 +69,43 @@ public class ChannelBusTask implements Runnable {
             return;
         }
 
-        if (event instanceof ReadyEvent) {
-            players.forEach(player -> player.handleReadyEvent((ReadyEvent) event));
-        }
-        else if (event instanceof ShootDownEvent) {
-            players.forEach(player -> player.handleShootDownEvent((ShootDownEvent) event));
-        }
-        else if (event instanceof SubscribeEvent) {
-            subscribers.parallelStream()
-                    .forEach(s -> s.handleSubscribeEvent((SubscribeEvent) event));
-        }
-        else if (event instanceof UnsubscribeEvent) {
-            subscribers.parallelStream()
-                    .forEach(s -> s.handleUnsubscribeEvent((UnsubscribeEvent) event));
-        }
-        else if (event instanceof DirectMessageEvent) {
-            // Handling direct messages
-            DirectMessageEvent directMessageEvent = (DirectMessageEvent) event;
-            String destId = directMessageEvent.getDestinationPlayerId();
-            if (!destId.equals(event.getSenderId()) && playersMap.containsKey(destId)) {
-                playersMap.get(destId).handleMessageEvent((MessageEvent) event);
-            }
-        }
-        else if (event instanceof MessageEvent) {
-            // Handling broadcast event
-            players.parallelStream()
-                    .filter(sub -> !sub.getId().equals(event.getSenderId()))
-                    .forEach(sub -> {
-                                sub.handleMessageEvent((MessageEvent) event);
-                            }
-                    );
+        switch (event.getType()) {
+            case READY:
+                players.forEach(player -> player.handleReadyEvent((ReadyEvent) event));
+                break;
+
+            case SHOOT_DOWN:
+                players.forEach(player -> player.handleShootDownEvent((ShootDownEvent) event));
+                break;
+
+            case SUBSCRIBE:
+                subscribers.parallelStream()
+                        .forEach(s -> s.handleSubscribeEvent((SubscribeEvent) event));
+                break;
+
+            case UNSUBSCRIBE:
+                subscribers.parallelStream()
+                        .forEach(s -> s.handleUnsubscribeEvent((UnsubscribeEvent) event));
+                break;
+
+            case DIRECT_MESSAGE:
+                // Handling direct messages
+                DirectMessageEvent directMessageEvent = (DirectMessageEvent) event;
+                String destId = directMessageEvent.getDestinationPlayerId();
+                if (!destId.equals(event.getSenderId()) && playersMap.containsKey(destId)) {
+                    playersMap.get(destId).handleMessageEvent((MessageEvent) event);
+                }
+                break;
+
+            case MESSAGE:
+                // Handling broadcast event
+                players.parallelStream()
+                        .filter(sub -> !sub.getId().equals(event.getSenderId()))
+                        .forEach(sub -> {
+                                    sub.handleMessageEvent((MessageEvent) event);
+                                }
+                        );
+                break;
         }
     }
 }

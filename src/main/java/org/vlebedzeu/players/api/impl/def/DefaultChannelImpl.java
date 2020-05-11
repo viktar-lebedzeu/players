@@ -1,8 +1,9 @@
-package org.vlebedzeu.players.api.impl;
+package org.vlebedzeu.players.api.impl.def;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vlebedzeu.players.api.Channel;
+import org.vlebedzeu.players.api.InitializationException;
 import org.vlebedzeu.players.api.MessageSource;
 import org.vlebedzeu.players.api.events.DirectMessageEvent;
 import org.vlebedzeu.players.api.events.Event;
@@ -42,7 +43,7 @@ public class DefaultChannelImpl implements Channel {
     private ChannelBusTask queueTask;
 
     @Override
-    public void start() {
+    public void start() throws InitializationException {
         queueTask = new ChannelBusTask(events, semaphore, players, playersMap, subscribers);
         executor.submit(queueTask);
         addEventAndUnlock(new ReadyEvent(null));

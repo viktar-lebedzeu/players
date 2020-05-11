@@ -1,20 +1,31 @@
 package org.vlebedzeu.players.api.events;
 
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 /**
  *
  */
+@Data
+@NoArgsConstructor
 public class Event {
-    @Getter
-    private final String senderId;
+    private String eventId = RandomStringUtils.randomAlphanumeric(30);
+    private String senderId;
 
-    @Getter
-    private final String eventId;
-
-    protected Event(String senderId) {
+    public Event(String senderId) {
         this.senderId = senderId;
-        this.eventId = RandomStringUtils.randomAlphanumeric(50);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return EqualsBuilder.reflectionEquals(this, obj);
+    }
+
+    @JsonIgnore
+    public EventType getType() {
+        return null;
     }
 }

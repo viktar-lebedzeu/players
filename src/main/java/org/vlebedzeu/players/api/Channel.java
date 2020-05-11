@@ -9,6 +9,6 @@ public interface Channel extends MessageSender, MessageBroadcastSender {
     void subscribePlayer(Player player);
     void unsubscribePlayer(Player player);
 
-    void start();
+    void start() throws InitializationException;
     void stop();
 }
