@@ -47,6 +47,6 @@ public class SecondaryPlayer extends Player {
 
     @Override
     public void handleShootDownEvent(ShootDownEvent event) {
-        logger.info("Secondary player \"{}\" received shootdown event.", this.id);
+        logger.info("Secondary player \"{}\" received shoot down event.", this.id);
     }
 }

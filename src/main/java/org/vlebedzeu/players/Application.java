@@ -10,7 +10,11 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vlebedzeu.players.api.ConfigConstants;
+import org.vlebedzeu.players.api.InitializationException;
 import org.vlebedzeu.players.api.builders.ApplicationBuilder;
+
+import static org.vlebedzeu.players.api.ConfigConstants.*;
 
 /**
  *
@@ -20,40 +24,58 @@ public class Application  {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     /** CLI options */
-    private static Options options = new Options();
+    private static final Options options = new Options();
 
     static {
         options.addOption(
-                Option.builder("ch")
-                        .longOpt("channel")
-                        .desc("Type of channel.")
-                        .argName("Channel")
+                Option.builder(OPT_CHANNEL)
+                        .longOpt(OPT_CHANNEL_LONG)
+                        .desc(OPT_CHANNEL_DESC)
+                        .argName(OPT_CHANNEL_ARG)
                         .hasArg()
                         .required(false)
                         .build()
         );
         options.addOption(
-                Option.builder("p")
-                        .longOpt("players")
-                        .desc("Comma separated list of Players. First of them will be initiator.")
-                        .argName("Players")
+                Option.builder(OPT_PLAYERS)
+                        .longOpt(OPT_PLAYERS_LONG)
+                        .desc(OPT_PLAYERS_DESC)
+                        .argName(OPT_PLAYERS_ARG)
                         .hasArg()
                         .required(true)
                         .build()
         );
         options.addOption(
-                Option.builder("msg")
-                        .longOpt("message")
-                        .desc("Comma separated list of messages.")
-                        .argName("Messages")
+                Option.builder(OPT_MESSAGE)
+                        .longOpt(OPT_MESSAGE_LONG)
+                        .desc(OPT_MESSAGE_DESC)
+                        .argName(OPT_MESSAGE_ARG)
                         .hasArg()
-                        .required(true)
+                        .required(false)
                         .build()
         );
         options.addOption(
-                Option.builder("h")
-                        .longOpt("help")
-                        .desc("Prints help message")
+                Option.builder(OPT_TIMEOUT)
+                        .longOpt(OPT_TIMEOUT_LONG)
+                        .desc(OPT_TIMEOUT_DESC)
+                        .argName(OPT_TIMEOUT_ARG)
+                        .hasArg()
+                        .required(false)
+                        .build()
+        );
+        options.addOption(
+                Option.builder(OPT_SUBSCRIBERS)
+                        .longOpt(OPT_SUBSCRIBERS_LONG)
+                        .desc(OPT_SUBSCRIBERS_DESC)
+                        .argName(OPT_SUBSCRIBERS_ARG)
+                        .hasArg()
+                        .required(false)
+                        .build()
+        );
+        options.addOption(
+                Option.builder(OPT_HELP)
+                        .longOpt(OPT_HELP_LONG)
+                        .desc(OPT_HELP_DESC)
                         .required(false)
                         .build()
         );
@@ -62,9 +84,8 @@ public class Application  {
     public static void main(String... args) {
         logger.info("Running Players application...");
         if (parseParameters(args)) {
-            logger.info("==============");
+            logger.info(StringUtils.repeat("=", 100));
         }
-        logger.info("Done.");
     }
 
     private static boolean parseParameters(String... args) {
@@ -75,19 +96,15 @@ public class Application  {
                 printHelp();
             }
 
-            final String channelOpt = line.getOptionValue("ch");
-            final String playersOpt = line.getOptionValue("p");
-            final String messageOpt = line.getOptionValue("msg");
+            logger.info("channel : {}", line.getOptionValue(OPT_CHANNEL));
+            logger.info("players : {}", line.getOptionValue(OPT_PLAYERS));
+            logger.info("message : {}", line.getOptionValue(OPT_MESSAGE));
 
-            logger.info("channel : {}", channelOpt);
-            logger.info("players : {}", playersOpt);
-            logger.info("message : {}", messageOpt);
-
-            ApplicationBuilder builder = new ApplicationBuilder(channelOpt, playersOpt, messageOpt).build();
+            ApplicationBuilder builder = new ApplicationBuilder(line).build();
             builder.start();
         }
-        catch (ParseException e) {
-            logger.error(e.getMessage());
+        catch (ParseException | InitializationException e) {
+            logger.error("Can not start application: {}", e.getMessage());
             printHelp();
             return false;
         }
@@ -101,6 +118,6 @@ public class Application  {
         HelpFormatter formatter = new HelpFormatter();
         final String separator = StringUtils.repeat("=", 100);
         final String header = separator + "\n" + "Players application options\n" + separator + "\n";
-        formatter.printHelp(150, "java -jar bidder.jar", header, options, separator, true);
+        formatter.printHelp(150, "java -jar trage/players-jar-with-dependencies.jar", header, options, separator, true);
     }
 }
