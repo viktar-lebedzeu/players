@@ -9,22 +9,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
- *
+ * Server socket connection task. Handles opening of new client socket connections.
  */
 public class ServerConnectionTask implements Runnable {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(ServerConnectionTask.class);
 
-    // private final ServerSocket serverSocket;
-    // private final ArrayList<Socket> clientSockets = new ArrayList<>();
+    /** Reference to async server socket channel */
     private final AsynchronousServerSocketChannel serverChannel;
+    /** Instance of socket channel handler */
     private final SocketChannelHandler handler;
 
-    /*
-    public ServerConnectionTask(ServerSocket serverSocket) {
-        this.serverSocket = serverSocket;
-    }
-    */
+    /** Running flag */
+    private boolean isRunning = true;
 
+    /**
+     * Parametrized constructor
+     * @param serverChannel Server socket channel
+     * @param handler Socket channel handler
+     */
     public ServerConnectionTask(AsynchronousServerSocketChannel serverChannel, SocketChannelHandler handler) {
         this.serverChannel = serverChannel;
         this.handler = handler;
@@ -33,7 +36,7 @@ public class ServerConnectionTask implements Runnable {
     @Override
     public void run() {
         try {
-            while (true) {
+            while (isRunning) {
                 Future<AsynchronousSocketChannel> acceptResult = serverChannel.accept();
                 AsynchronousSocketChannel clientChannel = acceptResult.get();
                 handler.onSocketChannelOpen(new SocketHolder(handler, clientChannel));
@@ -42,5 +45,12 @@ public class ServerConnectionTask implements Runnable {
             // Execution interrupted. Shooting down.
             logger.info("Execution interrupted. Shooting down.");
         }
+    }
+
+    /**
+     * Stops task execution
+     */
+    public void stop() {
+        isRunning = false;
     }
 }

@@ -10,10 +10,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Implementation of MessageSource interface that always returns predefined message(s)
  */
 public class MessageSourceStaticImpl implements MessageSource {
+    /** Predefined list of messages */
     private final List<String> messages;
 
+    /** Index of current message */
     private final AtomicInteger idx = new AtomicInteger(0);
 
+    /**
+     * Parametrized constructor
+     * @param messages List of messages
+     */
     public MessageSourceStaticImpl(String... messages) {
         this.messages = Arrays.asList(messages);
     }

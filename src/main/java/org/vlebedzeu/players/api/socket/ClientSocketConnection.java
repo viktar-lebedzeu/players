@@ -2,11 +2,8 @@ package org.vlebedzeu.players.api.socket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vlebedzeu.players.api.Channel;
 import org.vlebedzeu.players.api.events.Event;
-import org.vlebedzeu.players.api.events.EventType;
 import org.vlebedzeu.players.api.events.InOutEvent;
-import org.vlebedzeu.players.api.events.ShootDownEvent;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -20,20 +17,33 @@ import java.util.concurrent.TimeoutException;
 import static org.vlebedzeu.players.api.events.InOutEvent.InOutType.IN;
 
 /**
- *
+ * Implementation of client socket connection
  */
 public class ClientSocketConnection implements SocketConnection, SocketChannelHandler {
+    /** Logger */
     private static final Logger logger = LoggerFactory.getLogger(ClientSocketConnection.class);
 
+    /** Connection host */
     private final String host;
+    /** Connection port */
     private final int port;
+    /** Event queue interface */
     private final SocketEventQueueAware queueAware;
 
+    /** Socket holder */
     private SocketHolder holder;
 
+    /** Event mapper */
     private final EventMessageMapper mapper = new EventMessageMapper();
+    /** Executor for socket exchange handler */
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    /**
+     * Parametrized constructor
+     * @param host Communication host
+     * @param port Communication port
+     * @param queueAware Socket event queue interface instance
+     */
     public ClientSocketConnection(String host, int port, SocketEventQueueAware queueAware) {
         this.host = host;
         this.port = port;
@@ -83,7 +93,6 @@ public class ClientSocketConnection implements SocketConnection, SocketChannelHa
 
     @Override
     public void onMessage(SocketHolder channelHolder, String message) {
-        // logger.info("Received new message: {}", message);
         Event event = mapper.stringToEvent(message);
         if (event != null) {
             queueAware.addEventAndUnlock(new InOutEvent(IN, event));

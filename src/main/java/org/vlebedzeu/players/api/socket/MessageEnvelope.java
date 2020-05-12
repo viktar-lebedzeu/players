@@ -12,10 +12,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessageEnvelope {
-
+    /** Class name of wrapped event */
     @JsonProperty(value = "class")
     private String className;
 
+    /** Wrapped event as envelope's payload */
     @JsonProperty(value = "payload")
     private Object payload;
 }
