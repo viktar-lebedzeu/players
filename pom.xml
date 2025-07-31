@@ -21,7 +21,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 
-		<commons.lang3.version>3.8.1</commons.lang3.version>
+		<commons.lang3.version>3.18.0</commons.lang3.version>
 		<commons.cli.version>1.4</commons.cli.version>
 
 		<lombok.version>1.18.12</lombok.version>
